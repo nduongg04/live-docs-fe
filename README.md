@@ -58,16 +58,17 @@ The application will be available at `http://localhost:3000`
 - `npm run test` - Run tests
 
 ## Project Structure
-live-docs-fe/
-├── src/
-│ ├── app/ # Next.js pages and layouts
-│ ├── components/ # Reusable React components
-│ ├── hooks/ # Custom React hooks
-│ ├── services/ # API services
-│ └── utils/ # Utility functions
-├── public/ # Static files
-└── styles/ # Global styles
-
+```
+  live-docs-fe/
+  ├── src/
+  │ ├── app/ # Next.js pages and layouts
+  │ ├── components/ # Reusable React components
+  │ ├── hooks/ # Custom React hooks
+  │ ├── services/ # API services
+  │ └── utils/ # Utility functions
+  ├── public/ # Static files
+  └── styles/ # Global styles
+```
 ## Features
 
 - User authentication (Email, Google OAuth)
