@@ -6,6 +6,7 @@ import { Metadata } from "next";
 import { SessionProvider } from "next-auth/react";
 import Provider from "./Provider";
 import AuthProvider from "./AuthProvider";
+import { Toaster } from "@/components/ui/toaster";
 
 const fontSans = FontSans({
     subsets: ["latin"],
@@ -28,7 +29,7 @@ export default function RootLayout({
                     fontSans.variable,
                 )}
             >
-
+				<Toaster />
                 <AuthProvider>
                     <Provider>{children}</Provider>
 					

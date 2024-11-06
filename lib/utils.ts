@@ -35,7 +35,6 @@ export const dateConverter = (timestamp: string): string => {
   const timestampNum = Math.round(new Date(timestamp).getTime() / 1000);
   const date: Date = new Date(timestampNum * 1000);
   const now: Date = new Date();
-  console.log(date);
 
   const diff: number = now.getTime() - date.getTime();
   const diffInSeconds: number = diff / 1000;

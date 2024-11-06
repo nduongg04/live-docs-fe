@@ -1,89 +1,170 @@
 "use client";
 
+import { Icons } from "@/components/Icons";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+import { signUp } from "@/lib/actions/auth.action";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { Button } from "./ui/button";
+import * as z from "zod";
+
+const formSchema = z
+    .object({
+        avatar: z.instanceof(File).optional(),
+        email: z.string().email({ message: "Invalid email address" }),
+        displayName: z
+            .string()
+            .min(2, { message: "Display name must be at least 2 characters" }),
+        password: z
+            .string()
+            .min(8, { message: "Password must be at least 8 characters" }),
+        confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Passwords don't match",
+        path: ["confirmPassword"],
+    });
 
 export default function SignUpForm() {
-    const [isShowed, setIsShowed] = useState(false);
-
-    const formSchema = z.object({
-        email: z.string().email({
-            message: "Invalid email",
-        }),
-        password: z.string().min(8, {
-            message: "Password must be at least 8 characters.",
-        }),
-    });
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const { toast } = useToast();
+    const { update } = useSession();
+    const router = useRouter();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             email: "",
+            displayName: "",
             password: "",
+            confirmPassword: "",
         },
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        //TODO Do something with the form values.
         try {
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/register`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(values),
-                },
-            );
-            const data = await response.json();
+            const formData = new FormData();
+            formData.append("email", values.email);
+            formData.append("displayName", values.displayName);
+            formData.append("password", values.password);
+            if (values.avatar) {
+                formData.append("avatar", values.avatar);
+            }
+
+            const data = await signUp(formData);
             console.log(data);
-            if (response.ok) {
-                // router.replace("/");
-                console.log("Sign up successful");
-            } else if (data.message === "Email is already registered.") {
-                form.setError("email", {
-                    message: data.message,
+
+            if (data?.error) {
+                console.log("error");
+                throw new Error(data.message || "Registration failed");
+            } else {
+                toast({
+                    title: "Account created successfully",
+                    description: "You can now log in with your new account.",
                 });
+                router.push("/sign-in");
             }
         } catch (error) {
-            console.log(error);
-            form.setError("root", {
-                message: "Something went wrong. Please try again.",
+            toast({
+                title: "Error",
+                description:
+                    error instanceof Error
+                        ? error.message
+                        : "An unexpected error occurred",
+                variant: "destructive",
             });
+            form.setError("root", { message: error.message });
         }
     }
+
+    const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            form.setValue("avatar", file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setAvatarPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     return (
         <Form {...form}>
             <form
                 onSubmit={form.handleSubmit(onSubmit)}
-                className="flex flex-col gap-3"
+                className="space-y-3 text-black"
             >
+                <div className="flex items-center space-x-4">
+                    <FormField
+                        control={form.control}
+                        name="avatar"
+                        render={() => (
+                            <FormItem>
+                                <FormLabel className="cursor-pointer">
+                                    <Avatar className="h-16 w-16">
+                                        <AvatarImage
+                                            src={avatarPreview || undefined}
+                                            alt="Avatar preview"
+                                        />
+                                        <AvatarFallback>
+                                            {avatarPreview ? null : (
+                                                <Icons.Upload className="h-8 w-8" />
+                                            )}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleAvatarChange}
+                                        aria-label="Upload avatar"
+                                    />
+                                </FormControl>
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="displayName"
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                                <FormLabel>Display Name</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        placeholder="Enter your display name"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
                 <FormField
                     control={form.control}
                     name="email"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel className="text-slate-900">
-                                Email address
-                            </FormLabel>
-                            <FormControl className="shadow shadow-black/5">
+                        <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
                                 <Input
-                                    className="h-fit text-black focus-visible:ring-offset-0"
+                                    placeholder="Enter your email"
                                     {...field}
                                 />
                             </FormControl>
@@ -95,98 +176,43 @@ export default function SignUpForm() {
                     control={form.control}
                     name="password"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel className="text-black">
-                                Password
-                            </FormLabel>
-                            <FormControl className="shadow shadow-black/5">
-                                <div className="relative">
-                                    <Input
-                                        {...field}
-                                        type={isShowed ? "text" : "password"}
-                                        className="h-fit text-black focus-visible:ring-offset-0"
-                                    />
-                                    <Button
-                                        onClick={() =>
-                                            setIsShowed((prev) => !prev)
-                                        }
-                                        type="button"
-                                        className="absolute inset-y-0 end-0 z-20 flex cursor-pointer items-center rounded-e-md bg-transparent px-3 text-gray-400 hover:bg-transparent focus:text-blue-600 focus:outline-none dark:text-neutral-600 dark:focus:text-blue-500"
-                                    >
-                                        <svg
-                                            className="size-3.5 shrink-0"
-                                            width="24"
-                                            height="24"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        >
-                                            <path
-                                                className={
-                                                    isShowed
-                                                        ? "hidden"
-                                                        : "block"
-                                                }
-                                                d="M9.88 9.88a3 3 0 1 0 4.24 4.24"
-                                            ></path>
-                                            <path
-                                                className={
-                                                    isShowed
-                                                        ? "hidden"
-                                                        : "block"
-                                                }
-                                                d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"
-                                            ></path>
-                                            <path
-                                                className={
-                                                    isShowed
-                                                        ? "hidden"
-                                                        : "block"
-                                                }
-                                                d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"
-                                            ></path>
-                                            <line
-                                                className={
-                                                    isShowed
-                                                        ? "hidden"
-                                                        : "block"
-                                                }
-                                                x1="2"
-                                                x2="22"
-                                                y1="2"
-                                                y2="22"
-                                            ></line>
-                                            <path
-                                                className={
-                                                    isShowed
-                                                        ? "block"
-                                                        : "hidden"
-                                                }
-                                                d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"
-                                            ></path>
-                                            <circle
-                                                className={
-                                                    isShowed
-                                                        ? "block"
-                                                        : "hidden"
-                                                }
-                                                cx="12"
-                                                cy="12"
-                                                r="3"
-                                            ></circle>
-                                        </svg>
-                                    </Button>
-                                </div>
+                        <FormItem>
+                            <FormLabel>Password</FormLabel>
+                            <FormControl>
+                                <Input
+                                    type="password"
+                                    placeholder="Enter your password"
+                                    {...field}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
-                <Button className="mt-3" type="submit">
-                    Sign up
+                <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Confirm Password</FormLabel>
+                            <FormControl>
+                                <Input
+                                    type="password"
+                                    placeholder="Confirm your password"
+                                    {...field}
+                                />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                {form.formState.errors.root && (
+                    <FormMessage className="text-red-500">
+                        {form.formState.errors.root.message}
+                    </FormMessage>
+                )}
+                <Button type="submit" className="w-full">
+                    Sign Up
                 </Button>
             </form>
         </Form>

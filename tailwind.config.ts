@@ -39,6 +39,7 @@ const config = {
           400: '#27344D',
           500: '#2E3D5B',
         },
+		"dark-blue": "#09224D"
       },
       fontFamily: {
         sans: ['var(--font-sans)', ...fontFamily.sans],

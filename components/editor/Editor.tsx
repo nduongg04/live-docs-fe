@@ -7,7 +7,13 @@ import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { HeadingNode } from "@lexical/rich-text";
-import { FloatingComposer, FloatingThreads, liveblocksConfig, LiveblocksPlugin, useEditorStatus } from "@liveblocks/react-lexical";
+import {
+    FloatingComposer,
+    FloatingThreads,
+    liveblocksConfig,
+    LiveblocksPlugin,
+    useEditorStatus,
+} from "@liveblocks/react-lexical";
 import Loader from "../Loader";
 import Theme from "./plugins/Theme";
 import ToolbarPlugin from "./plugins/ToolbarPlugin";
@@ -33,7 +39,7 @@ export function Editor({
     currentUserType: UserType;
 }) {
     const status = useEditorStatus();
-	const {threads} = useThreads();
+    const { threads } = useThreads();
 
     const initialConfig = liveblocksConfig({
         namespace: "Editor",
@@ -51,7 +57,9 @@ export function Editor({
             <div className="editor-container size-full">
                 <div className="toolbar-wrapper flex min-w-full justify-between">
                     <ToolbarPlugin />
-                    {currentUserType === "editor" && <DeleteModal roomId={roomId} />}
+                    {currentUserType === "editor" && (
+                        <DeleteModal roomId={roomId} />
+                    )}
                 </div>
 
                 <div className="editor-wrapper flex flex-col items-center justify-start">
@@ -61,7 +69,7 @@ export function Editor({
                         <div className="editor-inner relative mb-5 h-fit min-h-[1100px] w-full max-w-[800px] shadow-md lg:mb-10">
                             <RichTextPlugin
                                 contentEditable={
-                                    <ContentEditable className="editor-input h-full" />
+                                    <ContentEditable className="editor-input h-full"  />
                                 }
                                 placeholder={<Placeholder />}
                                 ErrorBoundary={LexicalErrorBoundary}
@@ -74,12 +82,11 @@ export function Editor({
                         </div>
                     )}
 
-					<LiveblocksPlugin>
-						<FloatingComposer className="w-[350px]" />
-						<FloatingThreads threads={threads} />
-						<Comments />
-					</LiveblocksPlugin>
-
+                    <LiveblocksPlugin>
+                        <FloatingComposer className="w-[350px]" />
+                        <FloatingThreads threads={threads} />
+                        <Comments />
+                    </LiveblocksPlugin>
                 </div>
             </div>
         </LexicalComposer>

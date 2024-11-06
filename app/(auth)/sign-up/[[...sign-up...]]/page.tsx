@@ -1,8 +1,7 @@
-import { signIn } from "@/auth";
 import SignUp from "@/components/SignUp";
 
 const SignUpPage = async () => {
-	// await signIn();
+    // await signIn();
     return (
         <main className="auth-page">
             <SignUp />

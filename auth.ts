@@ -1,10 +1,27 @@
-import { access } from "fs";
+import { signUp } from '@/lib/actions/auth.action';
 import { jwtDecode } from "jwt-decode";
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import FacebookProvider from "next-auth/providers/facebook";
+import GoogleProvider from "next-auth/providers/google";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
+        GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            authorization: {
+                params: {
+                    prompt: "consent",
+                    access_type: "offline",
+                    response_type: "code",
+                },
+            },
+        }),
+        FacebookProvider({
+            clientId: process.env.FACEBOOK_CLIENT_ID!,
+            clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+        }),
         Credentials({
             credentials: {
                 email: {},
@@ -14,7 +31,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             authorize: async (credentials) => {
                 try {
                     const res = await fetch(
-                        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/login`,
+                        `${process.env.BACKEND_URL}/api/auth/login`,
                         {
                             method: "POST",
                             headers: {
@@ -47,12 +64,63 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ],
     pages: {
         signIn: "/sign-in",
+        error: "/error",
     },
     session: {
         strategy: "jwt",
     },
     callbacks: {
-        async jwt({ token, user }) {
+        async signIn({ user, account, profile }) {
+            if (account && user && account.provider !== "credentials") {
+                try {
+                    const body = {
+                        accessToken: account.access_token!,
+                        idToken: account.id_token!,
+                        provider: account.provider!,
+                        profile,
+                    };
+                    const response = await fetch(
+                        `${process.env.BACKEND_URL}/api/auth/${account.provider}/callback`,
+                        {
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            method: "POST",
+                            body: JSON.stringify(body),
+                        },
+                    );
+                    if (!response.ok) {
+                        throw new Error("Failed to sign in with Google");
+                    }
+                    const data = await response.json();
+                    console.log(data);
+                    user.id = data.user._id;
+                    user.displayName = data.user.displayName;
+                    user.avatar = data.user.avatar;
+                    user.email = data.user.email;
+                    user.token = {
+                        access_token: data.access_token,
+                        refresh_token: data.refresh_token,
+                    };
+                    return true;
+                } catch (error) {
+                    console.error("Error signing in with Google", error);
+                    return false;
+                }
+            }
+            return true;
+        },
+        async jwt({ token, user, trigger, session }) {
+            if (trigger === "update") {
+                console.log({ token, session });
+                return {
+                    ...token,
+                    user: {
+                        ...token.user,
+                        ...session.user,
+                    },
+                };
+            }
             if (user) {
                 token.accessToken = user.token!.access_token;
                 token.refreshToken = user.token!.refresh_token;
@@ -75,7 +143,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             try {
                 const res = await fetch(
-                    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/refresh`,
+                    `${process.env.BACKEND_URL}/api/auth/refresh`,
                     {
                         method: "POST",
                         headers: {
@@ -100,11 +168,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             session.accessToken = token.accessToken;
             session.refreshToken = token.refreshToken;
             session.user = {
-                id: token.user.id,
-                email: token.user.email,
+                id: token.user.id!,
+                email: token.user.email!,
                 displayName: token.user.displayName,
                 avatar: token.user.avatar,
-                emailVerified: token.user?.emailVerified || null,
+                emailVerified: new Date(),
             };
             if (token.error) {
                 session.error = token.error;

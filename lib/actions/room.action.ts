@@ -79,7 +79,7 @@ export const getDocuments = async (email: string) => {
     try {
         const rooms = await liveblocks.getRooms({ userId: email });
         console.log({ rooms });
-        return parseStringify(rooms);
+        return parseStringify(rooms.data);
     } catch (error) {
         console.error("Error happened while getting rooms", error);
     }

@@ -6,9 +6,10 @@ import { redirect } from "next/navigation";
 export async function POST(request: Request) {
     // Get the current user from your database
     const session = await auth();
-    if (!session || session.error) {
+    if (!session || session.error || !session.user) {
         redirect("/sign-in");
     }
+	console.log(session);
     const {id, displayName, email, avatar} = session.user;
 
 	const user = {
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
 			name: displayName,
 			email,
 			avatar,
-			color: getUserColor(id),
+			color: getUserColor(id!),
 		}
 	}
 
@@ -26,10 +27,16 @@ export async function POST(request: Request) {
     // Identify the user and return the result
     const { status, body } = await liveblocks.identifyUser(
         {
-            userId: user.info.email,
+            userId: user.info.email!,
             groupIds: []
         },
-        { userInfo: user.info },
+        { userInfo: {
+			id: user.info.id!,
+			name: user.info.name!,
+			email: user.info.email!,
+			avatar: user.info.avatar!,
+			color: user.info.color!,
+		} },
     );
 
     return new Response(body, { status });

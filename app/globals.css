@@ -15,6 +15,11 @@
 		margin: 0;
 	}
 
+	img {
+		user-select: none;
+		-webkit-user-drag: none;
+	}
+
 	.custom-scrollbar::-webkit-scrollbar {
 		width: 4px;
 		height: 4px;

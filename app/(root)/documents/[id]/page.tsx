@@ -12,7 +12,7 @@ const Document = async ({ params: { id } }: SearchParamProps) => {
         redirect("/sign-in");
     }
 
-    const room = await getDocument({ roomId: id, userId: session.user.email });
+    const room = await getDocument({ roomId: id, userId: session.user.email! });
 
     if (!room) {
         redirect("/");
@@ -29,21 +29,21 @@ const Document = async ({ params: { id } }: SearchParamProps) => {
             : "viewer",
     }));
 
-    const currentUserType = room.usersAccesses[session.user.email]?.includes(
+    const currentUserType = room.usersAccesses[session.user.email!]?.includes(
         "room:write",
     )
         ? "editor"
         : "viewer";
 
     return (
-            <main className="flex w-full flex-col items-center">
-                <CollaborativeRoom
-                    roomId={id}
-                    roomMetadata={room.metadata}
-                    users={usersData}
-                    currentUserType={currentUserType}
-                />
-            </main>
+        <main className="flex w-full flex-col items-center">
+            <CollaborativeRoom
+                roomId={id}
+                roomMetadata={room.metadata}
+                users={usersData}
+                currentUserType={currentUserType}
+            />
+        </main>
     );
 };
 
