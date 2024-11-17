@@ -17,7 +17,7 @@ const Home = async () => {
         return null; // Return early to prevent further rendering
     }
 
-    const roomDocuments = await getDocuments(session.user.email);
+    const roomDocuments = await getDocuments(session.user.email!);
 
     return (
         <main className="home-container">
@@ -33,13 +33,21 @@ const Home = async () => {
                     <div className="document-list-title">
                         <h3 className="text-28-semibold">All documents</h3>
                         <AddDocumentBtn
-                            userId={session.user.id}
-                            email={session.user.email}
+                            userId={session.user.id!}
+                            email={session.user.email!}
                         />
                     </div>
                     <ul className="document-ul">
                         {roomDocuments.map(
-                            ({ id, metadata, createdAt }) => (
+                            ({
+                                id,
+                                metadata,
+                                createdAt,
+                            }: {
+                                id: any;
+                                metadata: any;
+                                createdAt: any;
+                            }) => (
                                 <li key={id} className="document-list-item">
                                     <Link
                                         href={`/documents/${id}`}
@@ -79,8 +87,8 @@ const Home = async () => {
                         className="mx-auto"
                     />
                     <AddDocumentBtn
-                        userId={session.user.id}
-                        email={session.user.email}
+                        userId={session.user.id!}
+                        email={session.user.email!}
                     />
                 </div>
             )}

@@ -1,0 +1,62 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_NAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Send compose.yaml to EC2 and create env file
+        run: |
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/ec2_key.pem
+          chmod 600 ~/ec2_key.pem
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          scp -i ~/ec2_key.pem compose.yaml ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app
+          echo "${{secrets.ENV_FILE_CONTENT}}" > .env
+          scp -i ~/ec2_key.pem .env ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/app
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr-public.outputs.registry }}
+          ECR_REGISTRY_ID: ${{ secrets.ECR_REGISTRY_ID }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REGISTRY_ID/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REGISTRY_ID/$ECR_REPOSITORY:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/$ECR_REGISTRY_ID/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REGISTRY_ID/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REGISTRY_ID/$ECR_REPOSITORY:latest
+
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd ~/app
+            docker pull public.ecr.aws/y2x6m4d2/project/live-docs-fe:latest
+            docker compose down
+            docker compose up -d

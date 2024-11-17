@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { signUp } from "@/lib/actions/auth.action";
+import { getMessage } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -86,7 +87,7 @@ export default function SignUpForm() {
                         : "An unexpected error occurred",
                 variant: "destructive",
             });
-            form.setError("root", { message: error.message });
+            form.setError("root", { message: getMessage(error) });
         }
     }
 
