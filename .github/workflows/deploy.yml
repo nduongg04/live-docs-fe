@@ -58,5 +58,5 @@ jobs:
           script: |
             cd ~/app
             docker pull public.ecr.aws/y2x6m4d2/project/live-docs-fe:latest
-            docker compose down
-            docker compose up -d
+            docker-compose down
+            docker-compose up -d
