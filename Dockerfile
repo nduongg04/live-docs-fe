@@ -14,7 +14,7 @@ ENV NODE_ENV=production
 COPY --chown=node:node --from=build /app/.next ./.next
 COPY --chown=node:node --from=build /app/public ./public
 COPY --chown=node:node package*.json ./
-COPY --from=build /app/node_modules/next/dist/compiled/jest-worker ./node_modules/next/dist/compiled/jest-worker
+COPY --chown=node:node --from=build /app/next.config.mjs ./next.config.mjs
 
 RUN npm ci --only=production --quiet \
     && npm cache clean --force
