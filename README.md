@@ -12,7 +12,7 @@
 [![NextAuth.js](https://img.shields.io/badge/NextAuth.js-000000?style=for-the-badge&logo=next.js&logoColor=white)](https://next-auth.js.org/)
 [![Shadcn](https://img.shields.io/badge/Shadcn-100000?style=for-the-badge&logo=shadcnui&logoColor=white&labelColor=black&color=000000)](https://ui.shadcn.com/)
   
-  [Demo](https://livedocs.example.com) · [Frontend Repo](https://github.com/nduongg04/live-docs-fe) · [Backend Repo](https://github.com/nduongg04/live-docs-be)
+  [Demo](https://live-docs.duong.website) · [Frontend Repo](https://github.com/nduongg04/live-docs-fe) · [Backend Repo](https://github.com/nduongg04/live-docs-be)
 </div>
 
 ## 🔗 Related Repositories
